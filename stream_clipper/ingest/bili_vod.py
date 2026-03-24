@@ -141,13 +141,13 @@ def _yt_dlp_cmd(
 
 def _format_403_error(error_tail: str) -> str:
     return (
-        "yt-dlp 从哔哩哔哩返回了 HTTP 403。\n"
-        "可尝试：\n"
-        "1) 使用完整视频链接（https://www.bilibili.com/video/BV...）\n"
-        "2) 在 Edge/Chrome 登录哔哩哔哩后，设置 YTDLP_COOKIES_FROM_BROWSER=edge|chrome，"
-        "或保持自动浏览器 Cookie 回退开启\n"
-        "3) 或在 .env 中设置 BILI_SESSDATA，让下载器自动构建 Cookie\n\n"
-        f"原始错误：\n{error_tail}"
+        "yt-dlp received HTTP 403 from Bilibili.\n"
+        "Try the following:\n"
+        "1) Use the full video URL (https://www.bilibili.com/video/BV...)\n"
+        "2) Log in to Bilibili in Edge/Chrome, then set YTDLP_COOKIES_FROM_BROWSER=edge|chrome, "
+        "or keep automatic browser cookie fallback enabled\n"
+        "3) Or set BILI_SESSDATA in .env to let the downloader build cookies automatically\n\n"
+        f"Original error:\n{error_tail}"
     )
 
 
@@ -168,14 +168,14 @@ def _is_browser_cookie_error(error_tail: str) -> bool:
 
 def _format_browser_cookie_error(error_tail: str) -> str:
     return (
-        "yt-dlp 无法读取本机浏览器 Cookies。\n"
-        "通常是 Windows DPAPI 会话不匹配，或浏览器 Cookie 数据库被占用。\n"
-        "可尝试：\n"
-        "1) 完全关闭 Edge/Chrome 后重试\n"
-        "2) 使用拥有浏览器配置文件的同一 Windows 用户运行 worker\n"
-        "3) 在 .env 设置 BILI_SESSDATA，后台任务可更稳定鉴权\n"
-        "4) 若视频公开可见，可设置 YTDLP_AUTO_COOKIES_FROM_BROWSER=0 跳过浏览器 Cookie 回退\n\n"
-        f"原始错误：\n{error_tail}"
+        "yt-dlp cannot read local browser cookies.\n"
+        "This is usually caused by a Windows DPAPI session mismatch or a locked browser cookie database.\n"
+        "Try the following:\n"
+        "1) Completely close Edge/Chrome and retry\n"
+        "2) Run the worker as the same Windows user that owns the browser profile\n"
+        "3) Set BILI_SESSDATA in .env for more stable authentication in background tasks\n"
+        "4) If the video is publicly visible, set YTDLP_AUTO_COOKIES_FROM_BROWSER=0 to skip browser cookie fallback\n\n"
+        f"Original error:\n{error_tail}"
     )
 
 
@@ -217,7 +217,7 @@ def _fetch_video_info(bvid: str, cookies: Optional[dict] = None) -> Optional[dic
             if data.get("code") == 0:
                 return data.get("data")
     except Exception as e:
-        console.print(f"[yellow]警告：获取视频信息失败：{e}[/yellow]")
+        console.print(f"[yellow]Warning: failed to fetch video info: {e}[/yellow]")
     return None
 
 
@@ -231,10 +231,10 @@ def _download_danmaku(cid: str | int, dest_dir: Path, title: str) -> Optional[Pa
             resp = client.get(url)
             resp.raise_for_status()
             out_path.write_bytes(resp.content)
-            console.print(f"[green]弹幕已下载 -> {out_path.name}[/green]")
+            console.print(f"[green]Danmaku downloaded -> {out_path.name}[/green]")
             return out_path
     except Exception as e:
-        console.print(f"[yellow]警告：下载弹幕失败：{e}[/yellow]")
+        console.print(f"[yellow]Warning: failed to download danmaku: {e}[/yellow]")
     return None
 
 
@@ -301,7 +301,7 @@ def _download_video(
                 if fast_mode and not timeout_fast_fallback:
                     break
                 if fast_mode:
-                    console.print("[yellow]下载超时，改用快速格式重试...[/yellow]")
+                    console.print("[yellow]Download timed out, retrying with fast format...[/yellow]")
                 cmd = _yt_dlp_cmd(
                     target_url,
                     output_template,
@@ -315,15 +315,15 @@ def _download_video(
                     timeout_error = False
                     break
                 except FileNotFoundError:
-                    raise RuntimeError("未找到 yt-dlp，请先安装：pip install yt-dlp") from None
+                    raise RuntimeError("yt-dlp not found. Please install it first: pip install yt-dlp") from None
                 except subprocess.TimeoutExpired:
                     timeout_error = True
                     continue
 
             if timeout_error or result is None:
                 raise RuntimeError(
-                    "yt-dlp 下载哔哩哔哩视频超时。"
-                    "请尝试更短视频、更稳定网络，或增大 WORKER_YTDLP_TIMEOUT_SEC。"
+                    "yt-dlp timed out downloading the Bilibili video. "
+                    "Try a shorter video, a more stable network, or increase WORKER_YTDLP_TIMEOUT_SEC."
                 ) from None
 
             stdout_text = safe_decode(result.stdout)
@@ -345,7 +345,7 @@ def _download_video(
                 mp4s = sorted(dest_dir.glob("*.mp4"), key=os.path.getmtime, reverse=True)
                 if mp4s:
                     return mp4s[0]
-                raise RuntimeError("yt-dlp 已执行完成，但未找到输出文件。")
+                raise RuntimeError("yt-dlp completed successfully but no output file was found.")
 
             should_try_next = "403" in last_error_tail or "Forbidden" in last_error_tail
             if mode == "browser" and _is_browser_cookie_error(last_error_tail):
@@ -357,9 +357,9 @@ def _download_video(
                 raise RuntimeError(_format_browser_cookie_error(last_error_tail))
             if "403" in last_error_tail or "Forbidden" in last_error_tail:
                 raise RuntimeError(_format_403_error(last_error_tail))
-            raise RuntimeError(f"yt-dlp 执行失败：\n{last_error_tail}")
+            raise RuntimeError(f"yt-dlp execution failed:\n{last_error_tail}")
 
-        raise RuntimeError(_format_403_error(last_error_tail or "哔哩哔哩拒绝了所有下载尝试。"))
+        raise RuntimeError(_format_403_error(last_error_tail or "Bilibili rejected all download attempts."))
     finally:
         if generated_cookie_file is not None:
             generated_cookie_file.unlink(missing_ok=True)
@@ -396,7 +396,7 @@ class BiliVodIngest:
         """Fetch danmaku comments only, without downloading video."""
         target_url = _normalize_bili_url((url or self.url).strip())
         if not target_url:
-            raise ValueError("抓取弹幕需要提供哔哩哔哩视频链接")
+            raise ValueError("A Bilibili video URL is required to fetch danmaku")
 
         bvid = _extract_bvid(target_url)
         if not bvid:

@@ -153,24 +153,28 @@ def analyze_candidates_with_llm(
         return {}
 
     system_prompt = (
-        "你是中文视频高光候选分析器。请根据每段的字幕与弹幕摘录判断传播价值，"
-        "并输出一句中文摘要与标签。优先考虑：情绪爆发、反转、冲突、笑点、信息密度、"
-        "上下文完整度。只返回 JSON，不要输出额外文本。"
+        "You are a video highlight candidate analyzer. Evaluate the virality potential "
+        "of each segment based on its subtitle and danmaku (bullet comment) excerpts. "
+        "Output a one-sentence summary and tags for each. Prioritize: emotional bursts, "
+        "plot twists, conflicts, humor, information density, and context completeness. "
+        "Return JSON only, no extra text."
     )
     user_payload = {
         "task": (
-            "给每个候选片段打0-1分，分越高越值得进入最终高光列表；"
-            "同时总结每段主要内容，给2-4个短标签，并标记它是否具备明显吸引力开头。"
+            "Score each candidate clip from 0 to 1, where higher scores indicate "
+            "greater worthiness for the final highlight list. Also summarize the main "
+            "content of each segment, provide 2-4 short tags, and flag whether it has "
+            "an obviously attention-grabbing opening."
         ),
         "schema": {
             "scores": [
                 {
                     "index": 0,
                     "score": 0.0,
-                    "title": "简短标题",
-                    "reason": "一句话原因",
-                    "summary": "一句话概括主要内容",
-                    "tags": ["标签1", "标签2"],
+                    "title": "Short title",
+                    "reason": "One-sentence reason",
+                    "summary": "One-sentence summary of main content",
+                    "tags": ["tag1", "tag2"],
                     "hook": True,
                 }
             ]

@@ -244,25 +244,25 @@ def _needs_fresh_cookies(error_tail: str) -> bool:
 
 def _format_fresh_cookies_error(error_tail: str) -> str:
     return (
-        "该来源需要可用的浏览器最新 Cookies 才能让 yt-dlp 下载。\n"
-        "可尝试：\n"
-        "1) 先在 Edge/Chrome 打开目标页面，再立即重试\n"
-        "2) 设置 WEB_COOKIES_FROM_BROWSER=edge（或 chrome）\n"
-        "3) 或导出 cookies.txt，并设置 WEB_COOKIES_FILE=/path/to/cookies.txt\n"
-        "4) 确保 worker 与浏览器配置文件属于同一系统用户\n\n"
-        f"原始错误：\n{error_tail}"
+        "This source requires fresh browser cookies for yt-dlp to download.\n"
+        "Try the following:\n"
+        "1) Open the target page in Edge/Chrome first, then retry immediately\n"
+        "2) Set WEB_COOKIES_FROM_BROWSER=edge (or chrome)\n"
+        "3) Or export cookies.txt and set WEB_COOKIES_FILE=/path/to/cookies.txt\n"
+        "4) Ensure the worker runs as the same system user that owns the browser profile\n\n"
+        f"Original error:\n{error_tail}"
     )
 
 
 def _format_browser_cookie_error(error_tail: str) -> str:
     return (
-        "yt-dlp 无法读取本机浏览器 Cookies。\n"
-        "常见原因是 Windows DPAPI 会话不匹配，或浏览器 Cookie 数据库被占用。\n"
-        "可尝试：\n"
-        "1) 完全关闭 Edge/Chrome 后重试\n"
-        "2) 使用与浏览器配置文件相同的 Windows 用户运行 worker\n"
-        "3) 提供导出的 cookies.txt，并设置 WEB_COOKIES_FILE\n\n"
-        f"原始错误：\n{error_tail}"
+        "yt-dlp cannot read local browser cookies.\n"
+        "This is usually caused by a Windows DPAPI session mismatch or a locked browser cookie database.\n"
+        "Try the following:\n"
+        "1) Completely close Edge/Chrome and retry\n"
+        "2) Run the worker as the same Windows user that owns the browser profile\n"
+        "3) Provide an exported cookies.txt and set WEB_COOKIES_FILE\n\n"
+        f"Original error:\n{error_tail}"
     )
 
 
@@ -294,7 +294,7 @@ def download_video(
     output_template = str(dest_dir / "%(title).60s.%(ext)s")
     candidates = _candidate_web_urls(url)
     if not candidates:
-        raise RuntimeError("来源 URL 为空或格式无效。")
+        raise RuntimeError("Source URL is empty or has an invalid format.")
 
     configured_cookie_file = _configured_web_cookies_file(cookies_file)
     attempts: list[tuple[str, Optional[str], str]] = []
@@ -340,11 +340,11 @@ def download_video(
             try:
                 result = subprocess.run(cmd, capture_output=True, timeout=timeout_sec)
             except FileNotFoundError:
-                raise RuntimeError("未找到 yt-dlp，请先安装：pip install yt-dlp") from None
+                raise RuntimeError("yt-dlp not found. Please install it first: pip install yt-dlp") from None
             except subprocess.TimeoutExpired:
                 raise RuntimeError(
-                    "yt-dlp 下载来源视频超时。"
-                    "请尝试更短视频、更稳定网络，或增大 WORKER_YTDLP_TIMEOUT_SEC。"
+                    "yt-dlp timed out downloading the source video. "
+                    "Try a shorter video, a more stable network, or increase WORKER_YTDLP_TIMEOUT_SEC."
                 ) from None
 
             stdout_text = safe_decode(result.stdout)
@@ -377,7 +377,7 @@ def download_video(
             resolved = _resolve_downloaded_output(dest_dir)
             if resolved:
                 return resolved
-            last_error_tail = "yt-dlp 已执行完成，但未找到输出文件。"
+            last_error_tail = "yt-dlp completed successfully but no output file was found."
             break
         if unsupported_for_this_url and target_url != candidates[-1]:
             continue
@@ -390,11 +390,11 @@ def download_video(
             raise RuntimeError(_format_browser_cookie_error(last_error_tail))
         if "unsupported url" in lower and "douyin.com" in str(url).lower():
             raise RuntimeError(
-                "yt-dlp 不支持该抖音页面链接的直接解析。\n"
-                "请改用视频直链（优先 /video/<id> 或 v.douyin.com 短链）。\n\n"
-                f"原始错误：\n{last_error_tail}"
+                "yt-dlp does not support direct parsing of this Douyin page URL.\n"
+                "Please use a direct video link (preferably /video/<id> or a v.douyin.com short link).\n\n"
+                f"Original error:\n{last_error_tail}"
             )
-        raise RuntimeError(f"yt-dlp 执行失败：\n{last_error_tail}")
+        raise RuntimeError(f"yt-dlp execution failed:\n{last_error_tail}")
     finally:
         for p in generated_cookie_files:
             try:
@@ -440,7 +440,7 @@ def _start_live_recording(
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
             process = subprocess.Popen(cmd, **kwargs)
         except FileNotFoundError:
-            raise RuntimeError("未找到 yt-dlp，请先安装：pip install yt-dlp") from None
+            raise RuntimeError("yt-dlp not found. Please install it first: pip install yt-dlp") from None
     return process, stdout_log, stderr_log
 
 
@@ -553,7 +553,7 @@ class WebLiveIngest:
 
     def run(self) -> IngestResult:
         if not self.url:
-            raise ValueError("直播录制必须提供链接")
+            raise ValueError("A URL is required for live stream recording")
 
         if self.work_dir:
             self.work_dir.mkdir(parents=True, exist_ok=True)
@@ -572,8 +572,8 @@ class WebLiveIngest:
         )
         start_time = time.monotonic()
         console.print(
-            "[bold green]直播录制已开始。[/bold green] "
-            + (f"（将在 {self.max_seconds} 秒后自动停止）" if self.max_seconds else "")
+            "[bold green]Live recording started.[/bold green] "
+            + (f"(will auto-stop in {self.max_seconds}s)" if self.max_seconds else "")
         )
         try:
             while True:
@@ -599,10 +599,10 @@ class WebLiveIngest:
                 stderr_tail = safe_decode(stderr_log.read_bytes())[-1200:].strip()
             found_files = [str(p.name) for p in output_stem.parent.glob(f"{output_stem.name}*")]
             raise RuntimeError(
-                f"录制文件缺失或体积过小：{output_path or '(none)'}\n"
-                f"录制字节数：{recorded_bytes}\n"
-                f"匹配到的文件：{found_files}\n"
-                f"yt-dlp 错误尾部：\n{stderr_tail or '(empty)'}"
+                f"Recording file missing or too small: {output_path or '(none)'}\n"
+                f"Recorded bytes: {recorded_bytes}\n"
+                f"Matched files: {found_files}\n"
+                f"yt-dlp error tail:\n{stderr_tail or '(empty)'}"
             )
 
         duration = _probe_duration(output_path)

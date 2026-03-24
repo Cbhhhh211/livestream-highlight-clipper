@@ -506,11 +506,11 @@ class ClipWorker:
         elif job.source_type == "local":
             s3_key = context.get("raw_s3_key") or config.get("raw_s3_key", "")
             if not s3_key:
-                raise StageError("本地上传任务缺少 raw_s3_key 上下文")
+                raise StageError("Local upload task is missing raw_s3_key context")
             local_path = self.storage.download_temp(s3_key, suffix=".mp4")
             duration = self._probe_duration(local_path)
         else:
-            raise StageError(f"不支持的 source_type：{job.source_type}")
+            raise StageError(f"Unsupported source_type: {job.source_type}")
 
         # Upload raw to S3
         raw_key = f"raw/{job.user_id}/{job.id}/source.mp4"
@@ -1086,7 +1086,7 @@ class ClipWorker:
                     time.sleep(backoff)
                     continue
                 raise StageTimeoutError(
-                    f"命令执行超时（{timeout_sec}秒）：{cmd_preview}"
+                    f"Command timed out ({timeout_sec}s): {cmd_preview}"
                 ) from exc
 
             if result.returncode == 0:
@@ -1106,11 +1106,11 @@ class ClipWorker:
                 continue
 
             raise StageError(
-                f"命令执行失败（rc={result.returncode}）："
+                f"Command failed (rc={result.returncode}): "
                 f"{safe_decode(result.stderr)[-500:]}"
             )
 
-        raise StageError(f"出现异常命令失败状态：{cmd_preview}")
+        raise StageError(f"Unexpected command failure: {cmd_preview}")
 
     def _download_bili_vod_with_ytdlp(self, url: str) -> str:
         from stream_clipper.ingest.bili_vod import _download_video

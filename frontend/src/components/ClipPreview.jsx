@@ -15,9 +15,9 @@ import { useAppStore } from '../store/useAppStore';
 import { api } from '../hooks/useApi';
 
 const FEEDBACK_OPTIONS = [
-  { key: 'good', label: '好', icon: ThumbsUp },
-  { key: 'average', label: '一般', icon: Minus },
-  { key: 'bad', label: '差', icon: ThumbsDown },
+  { key: 'good', label: 'Good', icon: ThumbsUp },
+  { key: 'average', label: 'OK', icon: Minus },
+  { key: 'bad', label: 'Bad', icon: ThumbsDown },
 ];
 
 function formatTime(seconds) {
@@ -65,7 +65,7 @@ export default function ClipPreview() {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-text-muted">
         <Play size={40} strokeWidth={1.2} />
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]">请选择一个片段进行复核</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em]">Select a clip to review</p>
       </div>
     );
   }
@@ -76,20 +76,20 @@ export default function ClipPreview() {
     <div className="flex h-full w-full flex-col gap-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">预览</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Preview</div>
           <div className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-text-primary">
             {formatTime(selectedClip.clipStart)} - {formatTime(selectedClip.clipEnd)}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge label="评分" value={scorePercent} />
-          {selectedClip.contentHook && <Badge label="钩子" value="是" tone="warm" />}
+          <Badge label="Score" value={scorePercent} />
+          {selectedClip.contentHook && <Badge label="Hook" value="Yes" tone="warm" />}
           <button
             onClick={() => dispatch({ type: 'TOGGLE_CLIP', payload: selectedClip.id })}
             className="btn-secondary rounded-full px-4 py-2.5 text-sm"
           >
             {selectedClip.selected ? <Check size={14} /> : <Square size={14} />}
-            {selectedClip.selected ? '已选择' : '选择'}
+            {selectedClip.selected ? 'Selected' : 'Select'}
           </button>
         </div>
       </div>
@@ -154,14 +154,14 @@ export default function ClipPreview() {
               className="btn-secondary rounded-full px-3 py-2 text-xs"
             >
               {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-              {muted ? '静音' : '声音'}
+              {muted ? 'Muted' : 'Audio'}
             </button>
             <button
               onClick={() => videoRef.current?.requestFullscreen()}
               className="btn-secondary rounded-full px-3 py-2 text-xs"
             >
               <Maximize2 size={14} />
-              全屏
+              Fullscreen
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">

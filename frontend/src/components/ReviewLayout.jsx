@@ -24,27 +24,27 @@ export default function ReviewLayout() {
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                复核
+                Review
               </div>
               <h1 className="text-4xl font-extrabold tracking-[-0.05em] text-text-primary md:text-5xl">
-                保留最精彩片段，其余内容按需裁剪。
+                Keep the best clips, trim the rest as needed.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">
-                复核界面保持简洁：片段列表 + 预览 + 时间轴，确认后直接导出。
+                A clean review workflow: Clip List + Preview + Timeline. Export when ready.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <MetricChip label="已选" value={`${selectedCount}/${state.highlights.length || 0}`} />
-              <MetricChip label="总时长" value={`${totalDuration}秒`} />
-              <MetricChip label="平均分" value={`${avgScore}`} />
+              <MetricChip label="Selected" value={`${selectedCount}/${state.highlights.length || 0}`} />
+              <MetricChip label="Duration" value={`${totalDuration}s`} />
+              <MetricChip label="Avg Score" value={`${avgScore}`} />
               <button
                 onClick={() => dispatch({ type: 'SET_EXPORT_PLATFORM', payload: 'bilibili' })}
                 disabled={selectedCount === 0}
                 className="btn-warm rounded-full px-5 py-3 text-sm"
               >
                 <Download size={15} />
-                导出
+                Export
               </button>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function ReviewLayout() {
         <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="space-y-5">
             <section className="surface-panel p-4">
-              <div className="mb-4 text-sm font-semibold text-text-primary">片段列表</div>
+              <div className="mb-4 text-sm font-semibold text-text-primary">Clip List</div>
               <div className="max-h-[720px] overflow-y-auto pr-1">
                 <ClipList />
               </div>

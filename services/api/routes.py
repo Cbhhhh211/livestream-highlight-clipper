@@ -86,7 +86,7 @@ def _validate_external_source_url(source_type: str, source_url: Optional[str]) -
 
     parsed = urlparse(text)
     if parsed.scheme not in {"http", "https"}:
-        raise HTTPException(400, "source_url 必须使用 http 或 https 协议")
+        raise HTTPException(400, "source_url must use http or https protocol")
     return text
 
 
@@ -94,7 +94,7 @@ def _get_queue():
     try:
         from services.queue.job_queue import JobQueue
     except ModuleNotFoundError as exc:
-        raise HTTPException(503, "队列后端不可用：缺少 redis 依赖") from exc
+        raise HTTPException(503, "Queue backend unavailable: missing redis dependency") from exc
     return JobQueue(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
 
@@ -103,7 +103,7 @@ def _get_storage():
     try:
         from services.storage.s3 import S3Storage
     except ModuleNotFoundError as exc:
-        raise HTTPException(503, "对象存储后端不可用：缺少 boto3 依赖") from exc
+        raise HTTPException(503, "Object storage backend unavailable: missing boto3 dependency") from exc
     if _STORAGE_SINGLETON is None:
         with _STORAGE_LOCK:
             if _STORAGE_SINGLETON is None:
@@ -157,7 +157,7 @@ def _require_admin_user(user: User) -> None:
     allowed = _admin_emails()
     email = str(getattr(user, "email", "") or "").strip().lower()
     if not allowed or email not in allowed:
-        raise HTTPException(403, "需要管理员权限")
+        raise HTTPException(403, "Admin privileges required")
 
 
 @contextmanager
@@ -261,12 +261,12 @@ async def create_job(
 ):
     allowed_sources = {"local", "bili_vod", "bili_live", "web_vod", "web_live"}
     if body.source_type not in allowed_sources:
-        raise HTTPException(400, f"source_type 必须是以下之一：{', '.join(sorted(allowed_sources))}")
+        raise HTTPException(400, f"source_type must be one of: {', '.join(sorted(allowed_sources))}")
     normalized_source_url = _validate_external_source_url(body.source_type, body.source_url)
     if body.source_type in {"bili_vod", "bili_live", "web_vod", "web_live"} and not normalized_source_url:
-        raise HTTPException(400, "外部视频/直播任务必须提供 source_url")
+        raise HTTPException(400, "External video/live tasks require source_url")
     if body.source_type == "local" and not body.raw_s3_key:
-        raise HTTPException(400, "全量 API 模式下，本地任务必须提供 raw_s3_key")
+        raise HTTPException(400, "In full API mode, local tasks require raw_s3_key")
 
     # Enforce plan limits
     active = await queries.count_active_jobs(db, user.id)
@@ -362,7 +362,7 @@ async def get_job(
 ):
     job = await queries.get_job(db, job_id)
     if not job or job.user_id != user.id:
-        raise HTTPException(404, "任务不存在")
+        raise HTTPException(404, "Job not found")
 
     clips = []
     if job.status == "completed":
@@ -418,9 +418,9 @@ async def cleanup_job_source(
     """
     job = await queries.get_job(db, job_id)
     if not job or job.user_id != user.id:
-        raise HTTPException(404, "任务不存在")
+        raise HTTPException(404, "Job not found")
     if job.status in {"queued", "processing", "retrying"}:
-        raise HTTPException(409, "任务仍在运行中")
+        raise HTTPException(409, "Job is still running")
     return {
         "status": "ok",
         "job_id": str(job.id),
@@ -444,12 +444,12 @@ async def stream_job_progress(
 ):
     job = await queries.get_job(db, job_id)
     if not job or job.user_id != user.id:
-        raise HTTPException(404, "任务不存在")
+        raise HTTPException(404, "Job not found")
 
     try:
         import redis.asyncio as aioredis
     except ModuleNotFoundError as exc:
-        raise HTTPException(503, "SSE 进度流不可用：缺少 redis 依赖") from exc
+        raise HTTPException(503, "SSE progress stream unavailable: missing redis dependency") from exc
 
     redis_client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
@@ -531,7 +531,7 @@ async def get_clip_detail(
 ):
     clip = await queries.get_clip(db, clip_id)
     if not clip or clip.user_id != user.id or clip.is_deleted:
-        raise HTTPException(404, "片段不存在")
+        raise HTTPException(404, "Clip not found")
 
     storage = _get_storage()
     return ClipResponse(
@@ -562,7 +562,7 @@ async def delete_clip(
 ):
     clip = await queries.get_clip(db, clip_id)
     if not clip or clip.user_id != user.id:
-        raise HTTPException(404, "片段不存在")
+        raise HTTPException(404, "Clip not found")
 
     await queries.soft_delete_clip(db, clip_id)
     await db.commit()
@@ -593,16 +593,16 @@ async def adjust_clip_bounds(
         new_start = float(payload.get("clip_start"))
         new_end = float(payload.get("clip_end"))
     except (TypeError, ValueError) as exc:
-        raise HTTPException(400, "clip_start 和 clip_end 必须是数字") from exc
+        raise HTTPException(400, "clip_start and clip_end must be numbers") from exc
 
     if new_end <= new_start:
-        raise HTTPException(400, "片段边界无效")
+        raise HTTPException(400, "Invalid clip boundaries")
     if new_end - new_start < 2.0:
-        raise HTTPException(400, "片段时长必须大于等于 2 秒")
+        raise HTTPException(400, "Clip duration must be at least 2 seconds")
 
     clip = await queries.get_clip(db, clip_id)
     if not clip or clip.user_id != user.id or clip.is_deleted:
-        raise HTTPException(404, "片段不存在")
+        raise HTTPException(404, "Clip not found")
 
     prev_start = float(clip.clip_start)
     prev_end = float(clip.clip_end)
@@ -666,7 +666,7 @@ async def submit_clip_feedback(
 ):
     clip = await queries.get_clip(db, clip_id)
     if not clip or clip.user_id != user.id or clip.is_deleted:
-        raise HTTPException(404, "片段不存在")
+        raise HTTPException(404, "Clip not found")
 
     record = {
         "clip_id": str(clip.id),

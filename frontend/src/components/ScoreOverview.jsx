@@ -35,20 +35,20 @@ export default function ScoreOverview({ totalClips, selectedCount, totalDuration
     <div className="flex h-full flex-col justify-between">
       <div>
         <div className="mb-5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">分析</div>
-          <h3 className="mt-1 text-lg font-semibold text-text-primary">评分概览</h3>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Analytics</div>
+          <h3 className="mt-1 text-lg font-semibold text-text-primary">Score Overview</h3>
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-3">
-          <StatCard label="已保留片段" value={`${selectedCount}/${totalClips}`} />
-          <StatCard label="平均分" value={`${avgScore}`} />
-          <StatCard label="总时长" value={`${totalDuration}秒`} />
-          <StatCard label="平均片长" value={`${selectedCount > 0 ? Math.max(1, Math.round(totalDuration / selectedCount)) : 0}秒`} />
+          <StatCard label="Kept Clips" value={`${selectedCount}/${totalClips}`} />
+          <StatCard label="Avg Score" value={`${avgScore}`} />
+          <StatCard label="Duration" value={`${totalDuration}s`} />
+          <StatCard label="Avg Length" value={`${selectedCount > 0 ? Math.max(1, Math.round(totalDuration / selectedCount)) : 0}s`} />
         </div>
 
         {highlights.length > 0 && (
           <div>
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">分布</div>
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Distribution</div>
             <div className="space-y-2.5">
               {SCORE_BANDS.map((band) => {
                 const count = highlights.filter((h) => h.score >= band.min && h.score < band.max).length;
@@ -74,12 +74,12 @@ export default function ScoreOverview({ totalClips, selectedCount, totalDuration
           className="btn-warm flex-1 rounded-full px-5 py-3 text-sm"
         >
           <Download size={15} />
-          导出
+          Export
         </button>
         <button
           onClick={handleRetrain}
           disabled={retraining}
-          title="重新训练反馈模型"
+          title="Retrain feedback model"
           className="btn-secondary rounded-full px-5"
         >
           <BrainCircuit size={16} className={retraining ? 'animate-pulse' : ''} />

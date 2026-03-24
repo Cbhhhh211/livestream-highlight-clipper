@@ -167,7 +167,7 @@ def _validate_source_url(source_type: str, source_url: Optional[str]) -> Optiona
 
     parsed = urlparse(text)
     if parsed.scheme not in {"http", "https"}:
-        raise HTTPException(400, "source_url 必须使用 http 或 https 协议")
+        raise HTTPException(400, "source_url must use http or https protocol")
     return text
 
 
@@ -184,7 +184,7 @@ def _save_upload_with_limit(uploaded_file: UploadFile, dst: Path, max_bytes: int
                 if total > max_bytes:
                     raise HTTPException(
                         413,
-                        f"上传文件过大（>{_MAX_UPLOAD_MB} MB）。请压缩文件或提高 LITE_MAX_UPLOAD_MB。",
+                        f"Uploaded file too large (>{_MAX_UPLOAD_MB} MB). Please compress the file or increase LITE_MAX_UPLOAD_MB.",
                     )
                 f.write(chunk)
     except Exception:
@@ -240,7 +240,7 @@ def _run_ffmpeg(cmd: list[str], timeout_sec: int = 900) -> tuple[int, str]:
     try:
         result = subprocess.run(cmd, capture_output=True, timeout=timeout_sec)
     except FileNotFoundError as exc:
-        raise RuntimeError("未在 PATH 中找到 ffmpeg") from exc
+        raise RuntimeError("ffmpeg not found in PATH") from exc
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("ffmpeg timeout while recutting clip") from exc
     return result.returncode, safe_decode(result.stderr, preferred_encoding="utf-8")
@@ -310,7 +310,7 @@ def _cut_clip_h264(
     ]
     rc, stderr = _run_ffmpeg(encode_cmd, timeout_sec=900)
     if rc != 0:
-        raise RuntimeError(f"ffmpeg 重新裁剪失败：{stderr[-1200:]}")
+        raise RuntimeError(f"ffmpeg re-encode failed: {stderr[-1200:]}")
     return "reencode"
 
 
@@ -620,11 +620,11 @@ def _run_job(job_id: str) -> None:
     try:
         if source_type == "local":
             if not input_video_path:
-                raise ValueError("本地任务缺少上传文件")
+                raise ValueError("Local task is missing an uploaded file")
             ingest = LocalIngest(video_path=input_video_path, danmaku_path=None)
         elif source_type == "bili_vod":
             if not source_url:
-                raise ValueError("哔哩哔哩任务必须提供视频链接")
+                raise ValueError("Bilibili task requires a video URL")
             with _LOCK:
                 _publish(job, "danmaku", 0.18)
 
@@ -643,7 +643,7 @@ def _run_job(job_id: str) -> None:
             )
         elif source_type == "bili_live":
             if not source_url:
-                raise ValueError("直播任务必须提供链接")
+                raise ValueError("Live stream task requires a URL")
             with _LOCK:
                 _publish(job, "danmaku", 0.18)
             max_seconds = int(options.get("duration", 180))
@@ -667,7 +667,7 @@ def _run_job(job_id: str) -> None:
             )
         elif source_type == "web_vod":
             if not source_url:
-                raise ValueError("网页视频任务必须提供来源链接")
+                raise ValueError("Web video task requires a source URL")
             with _LOCK:
                 _publish(job, "danmaku", 0.18)
 
@@ -684,7 +684,7 @@ def _run_job(job_id: str) -> None:
             )
         elif source_type == "web_live":
             if not source_url:
-                raise ValueError("网页直播任务必须提供链接")
+                raise ValueError("Web live stream task requires a URL")
             with _LOCK:
                 _publish(job, "danmaku", 0.18)
             max_seconds = int(options.get("duration", 180))
@@ -707,7 +707,7 @@ def _run_job(job_id: str) -> None:
                 progress_cb=_web_live_progress_cb,
             )
         else:
-            raise ValueError(f"不支持的 source_type：{source_type}")
+            raise ValueError(f"Unsupported source_type: {source_type}")
 
         ingest_result = ingest.run()
         with _LOCK:
@@ -876,9 +876,9 @@ async def create_job(request: Request):
         options["adaptive_max_after"] = payload.get("adaptive_max_after", 60.0)
 
     if source_type not in {"local", "bili_vod", "bili_live", "web_vod", "web_live"}:
-        raise HTTPException(400, "source_type 必须是以下之一：local、bili_vod、bili_live、web_vod、web_live")
+        raise HTTPException(400, "source_type must be one of: local, bili_vod, bili_live, web_vod, web_live")
     if source_type in {"bili_vod", "bili_live", "web_vod", "web_live"} and not source_url:
-        raise HTTPException(400, "外部视频/直播任务必须提供 source_url")
+        raise HTTPException(400, "External video/live stream tasks require a source_url")
 
     if source_type == "bili_vod" and source_url:
         source_url = _normalize_bili_url(source_url)
@@ -887,11 +887,11 @@ async def create_job(request: Request):
     try:
         job = _new_job(source_type=source_type, source_url=source_url, options=options)
     except OSError as exc:
-        raise HTTPException(400, f"output_dir 无效：{exc}") from exc
+        raise HTTPException(400, f"Invalid output_dir: {exc}") from exc
 
     if source_type == "local":
         if not _is_uploaded_file(uploaded_file):
-            raise HTTPException(400, "本地来源必须上传视频文件")
+            raise HTTPException(400, "Local source requires an uploaded video file")
 
         input_dir = Path(job["job_dir"]) / "input"
         input_dir.mkdir(parents=True, exist_ok=True)
@@ -927,7 +927,7 @@ async def get_job(job_id: str):
     with _LOCK:
         job = _JOBS.get(job_id)
         if not job:
-            raise HTTPException(404, "任务不存在")
+            raise HTTPException(404, "Task not found")
         return _job_response(job)
 
 
@@ -941,9 +941,9 @@ async def cleanup_job_source(job_id: str):
     with _LOCK:
         job = _JOBS.get(job_id)
         if not job:
-            raise HTTPException(404, "任务不存在")
+            raise HTTPException(404, "Task not found")
         if job.get("status") in {"queued", "processing"}:
-            raise HTTPException(409, "任务仍在运行中")
+            raise HTTPException(409, "Task is still running")
         job_copy = copy.deepcopy(job)
 
     result = _cleanup_source_artifacts(job_copy)
@@ -992,7 +992,7 @@ async def stream_job_progress(job_id: str, request: Request):
     with _LOCK:
         job = _JOBS.get(job_id)
         if not job:
-            raise HTTPException(404, "任务不存在")
+            raise HTTPException(404, "Task not found")
 
     async def event_stream():
         index = 0
@@ -1040,7 +1040,7 @@ async def get_clip(clip_id: str):
             for clip in job.get("clips", []):
                 if clip.get("id") == clip_id:
                     return clip
-    raise HTTPException(404, "片段不存在")
+    raise HTTPException(404, "Clip not found")
 
 
 @router.post("/clips/{clip_id}/adjust")
@@ -1057,12 +1057,12 @@ async def adjust_clip_bounds(clip_id: str, request: Request):
         new_start = float(payload.get("clip_start"))
         new_end = float(payload.get("clip_end"))
     except (TypeError, ValueError) as exc:
-        raise HTTPException(400, "clip_start 和 clip_end 必须是数字") from exc
+        raise HTTPException(400, "clip_start and clip_end must be numbers") from exc
 
     note = str(payload.get("note", "")).strip()
     fast_preview = parse_bool(payload.get("fast_preview", False), False)
     if len(note) > 500:
-        raise HTTPException(400, "note 长度不能超过 500 个字符")
+        raise HTTPException(400, "note must not exceed 500 characters")
 
     with _LOCK:
         clip_obj: Optional[Dict[str, Any]] = None
@@ -1077,10 +1077,10 @@ async def adjust_clip_bounds(clip_id: str, request: Request):
                 break
 
     if clip_obj is None or job_obj is None:
-        raise HTTPException(404, "片段不存在")
+        raise HTTPException(404, "Clip not found")
 
     if job_obj.get("status") != "completed":
-        raise HTTPException(409, "任务尚未完成，暂不可调整片段")
+        raise HTTPException(409, "Task not yet completed; clip adjustment unavailable")
 
     job_duration = float(job_obj.get("video_duration") or 0.0)
     if job_duration <= 0:
@@ -1092,15 +1092,15 @@ async def adjust_clip_bounds(clip_id: str, request: Request):
         )
 
     if new_start < 0 or new_end <= new_start:
-        raise HTTPException(400, "片段边界无效")
+        raise HTTPException(400, "Invalid clip boundaries")
     if new_end > job_duration + 1e-6:
-        raise HTTPException(400, "clip_end 超出视频总时长")
+        raise HTTPException(400, "clip_end exceeds total video duration")
     if new_end - new_start < 2.0:
-        raise HTTPException(400, "片段时长必须大于等于 2 秒")
+        raise HTTPException(400, "Clip duration must be at least 2 seconds")
 
     source_video = _safe_job_video_path(job_obj)
     if not source_video or not source_video.exists():
-        raise HTTPException(409, "源视频不可用。若需后续可编辑，请关闭源文件自动清理。")
+        raise HTTPException(409, "Source video unavailable. Disable automatic source cleanup to allow future edits.")
 
     output_dir = Path(job_obj["output_dir"]).resolve()
     file_name = str(clip_obj.get("file_name") or "")
@@ -1111,7 +1111,7 @@ async def adjust_clip_bounds(clip_id: str, request: Request):
 
     target_path = (output_dir / file_name).resolve()
     if output_dir not in target_path.parents:
-        raise HTTPException(403, "输出路径不允许访问")
+        raise HTTPException(403, "Output path access denied")
 
     try:
         cut_mode = _cut_clip_h264(
@@ -1185,7 +1185,7 @@ async def delete_clip(clip_id: str):
                 if clip.get("id") == clip_id:
                     clips.pop(i)
                     return JSONResponse(status_code=204, content={})
-    raise HTTPException(404, "片段不存在")
+    raise HTTPException(404, "Clip not found")
 
 
 @router.post("/clips/{clip_id}/feedback")
@@ -1200,7 +1200,7 @@ async def submit_clip_feedback(clip_id: str, request: Request):
         raise HTTPException(400, "rating must be one of: good, average, bad")
     note = str(payload.get("note", "")).strip()
     if len(note) > 500:
-        raise HTTPException(400, "note 长度不能超过 500 个字符")
+        raise HTTPException(400, "note must not exceed 500 characters")
 
     clip_obj: Optional[Dict[str, Any]] = None
     job_obj: Optional[Dict[str, Any]] = None
@@ -1215,7 +1215,7 @@ async def submit_clip_feedback(clip_id: str, request: Request):
                 break
 
         if clip_obj is None or job_obj is None:
-            raise HTTPException(404, "片段不存在")
+            raise HTTPException(404, "Clip not found")
 
         clip_obj["feedback"] = rating
         clip_obj["feedback_note"] = note or None
@@ -1356,12 +1356,12 @@ async def serve_clip_file(job_id: str, filename: str):
     with _LOCK:
         job = _JOBS.get(job_id)
     if not job:
-        raise HTTPException(404, "任务不存在")
+        raise HTTPException(404, "Task not found")
 
     job_output = Path(job["output_dir"]).resolve()
     target = (job_output / filename).resolve()
     if job_output not in target.parents:
         raise HTTPException(403, "Forbidden path")
     if not target.exists() or not target.is_file():
-        raise HTTPException(404, "文件不存在")
+        raise HTTPException(404, "File not found")
     return FileResponse(target)

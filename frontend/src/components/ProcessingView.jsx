@@ -11,12 +11,12 @@ import { useAppStore } from '../store/useAppStore';
 import { api } from '../hooks/useApi';
 
 const STAGE_CONFIG = {
-  download: { label: '素材准备', detail: '正在准备输入视频与来源元数据。' },
-  danmaku: { label: '弹幕处理', detail: '正在获取观众互动信号。' },
-  asr: { label: '语音转写', detail: '正在转写视频中的语音内容。' },
-  scoring: { label: '高光评分', detail: '正在为候选高光片段排序。' },
-  clipping: { label: '切片生成', detail: '正在生成可复核的片段文件。' },
-  upload: { label: '结果整理', detail: '正在保存元数据与输出结果。' },
+  download: { label: 'Preparing', detail: 'Preparing input video and metadata.' },
+  danmaku: { label: 'Chat Analysis', detail: 'Analyzing audience interaction signals.' },
+  asr: { label: 'Speech Recognition', detail: 'Transcribing speech from video.' },
+  scoring: { label: 'Highlight Scoring', detail: 'Scoring highlight candidates.' },
+  clipping: { label: 'Clip Generation', detail: 'Generating clip files.' },
+  upload: { label: 'Finalizing', detail: 'Saving metadata and results.' },
 };
 
 const STAGES = Object.keys(STAGE_CONFIG);
@@ -28,10 +28,10 @@ function normalizeLogText(text) {
 }
 
 function formatElapsed(s) {
-  if (s < 60) return `${s}秒`;
+  if (s < 60) return `${s}sec`;
   const m = Math.floor(s / 60);
   const sec = s % 60;
-  return `${m}分 ${String(sec).padStart(2, '0')}秒`;
+  return `${m}m ${String(sec).padStart(2, '0')}sec`;
 }
 
 function formatVideoTime(seconds) {
@@ -79,13 +79,13 @@ export default function ProcessingView() {
           setCompletedResult({ highlights: job.clips || [], duration: job.video_duration || 0 });
           clearInterval(pollRef.current);
         } else if (job.status === 'failed') {
-          dispatch({ type: 'JOB_FAILED', payload: job.error || '任务失败' });
+          dispatch({ type: 'JOB_FAILED', payload: job.error || 'Task failed' });
           clearInterval(pollRef.current);
         }
       } catch {
         pollErrorCountRef.current += 1;
         if (pollErrorCountRef.current >= 8) {
-          dispatch({ type: 'JOB_FAILED', payload: '连接已中断' });
+          dispatch({ type: 'JOB_FAILED', payload: 'Connection lost' });
           clearInterval(pollRef.current);
         }
       }
@@ -114,16 +114,16 @@ export default function ProcessingView() {
   const currentStage = STAGE_CONFIG[state.currentStage] || null;
 
   const statusTitle = state.jobStatus === 'failed'
-    ? '处理已中断'
+    ? 'Processing Interrupted'
     : isPipelineDone
-      ? '片段已生成，可进入复核'
-      : currentStage?.label || '正在准备项目';
+      ? 'Clips ready for review'
+      : currentStage?.label || 'Preparing project';
 
   const statusText = state.jobStatus === 'failed'
-    ? '请先查看下方最新错误，修复素材或鉴权问题后再重试。'
+    ? 'Check errors below, fix issues and retry.'
     : isPipelineDone
-      ? '首轮处理已完成，建议先复核与微调，再进行导出。'
-      : currentStage?.detail || '正在等待可用的处理进程。';
+      ? 'First pass complete. Review and adjust before exporting.'
+      : currentStage?.detail || 'Task queued, waiting for worker.';
 
   return (
     <div className="min-h-full w-full overflow-y-auto p-4 md:p-8">
@@ -132,7 +132,7 @@ export default function ProcessingView() {
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                处理中
+                Processing
               </div>
               <h1 className="text-4xl font-extrabold tracking-[-0.05em] text-text-primary md:text-5xl">
                 {statusTitle}
@@ -140,14 +140,14 @@ export default function ProcessingView() {
               <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">{statusText}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <MetaChip label="进度" value={`${percent}%`} />
-              <MetaChip label="耗时" value={elapsed > 0 ? formatElapsed(elapsed) : '启动中'} />
+              <MetaChip label="Progress" value={`${percent}%`} />
+              <MetaChip label="Elapsed" value={elapsed > 0 ? formatElapsed(elapsed) : 'Starting'} />
             </div>
           </div>
 
           <div className="mb-6">
             <div className="mb-2 flex items-center justify-between text-xs text-text-muted">
-              <span>流程进度</span>
+              <span>Pipeline Progress</span>
               <span className="font-mono">{percent}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-[#20364f]">
@@ -173,7 +173,7 @@ export default function ProcessingView() {
                       {isDone ? <CheckCircle2 size={17} /> : isActive ? <Loader size={17} className="animate-spin" /> : <span className="text-sm font-bold">{index + 1}</span>}
                     </div>
                     <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
-                      {isDone ? '完成' : isActive ? '进行中' : '等待中'}
+                      {isDone ? 'Done' : isActive ? 'In Progress' : 'Waiting'}
                     </span>
                   </div>
                   <div className="text-sm font-semibold text-text-primary">{config.label}</div>
@@ -188,10 +188,10 @@ export default function ProcessingView() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="text-sm font-semibold text-text-primary">
-                    {completedResult ? '进入复核' : '重试当前任务'}
+                    {completedResult ? 'Go to Review' : 'Retry Task'}
                   </div>
                   <div className="mt-1 text-sm text-text-secondary">
-                    {completedResult ? '打开生成片段并按需微调。' : '建议先查看最后错误，再重新开始。'}
+                    {completedResult ? 'Open generated clips and adjust as needed.' : 'Review the last error before restarting.'}
                   </div>
                 </div>
                 {completedResult ? (
@@ -206,7 +206,7 @@ export default function ProcessingView() {
                     })}
                     className="btn-warm rounded-full px-5 py-3 text-sm"
                   >
-                    继续到复核
+                    Continue to Review
                     <ArrowRight size={15} />
                   </button>
                 ) : (
@@ -215,7 +215,7 @@ export default function ProcessingView() {
                     className="btn-secondary rounded-full px-5 py-3 text-sm"
                   >
                     <RefreshCcw size={15} />
-                    重新开始
+                    Start Over
                   </button>
                 )}
               </div>
@@ -226,13 +226,13 @@ export default function ProcessingView() {
         <div className="space-y-5">
           {completedResult && (
             <section className="surface-panel p-5">
-              <div className="mb-3 text-sm font-semibold text-text-primary">已生成片段</div>
+              <div className="mb-3 text-sm font-semibold text-text-primary">Generated Clips</div>
               <div className="space-y-2">
                 {completedResult.highlights?.slice(0, 6).map((clip, idx) => (
                   <div key={clip.id || `clip-${idx}`} className="rounded-[18px] border border-white/8 bg-[#152b42] px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-semibold text-text-primary">
-                        片段 {String(idx + 1).padStart(2, '0')}
+                        Clip {String(idx + 1).padStart(2, '0')}
                       </div>
                       <div className="text-xs font-mono text-text-muted">
                         {formatVideoTime(clip.clip_start)} - {formatVideoTime(clip.clip_end)}
@@ -247,7 +247,7 @@ export default function ProcessingView() {
           <section className="surface-panel p-5">
             <div className="mb-3 flex items-center gap-2 text-text-primary">
               <AlertCircle size={16} />
-              <span className="text-sm font-semibold">执行日志</span>
+              <span className="text-sm font-semibold">Execution Log</span>
             </div>
             {latestErrorText && (
               <div className="mb-3 rounded-[18px] border border-danger/25 bg-danger/6 px-4 py-3 text-sm text-danger whitespace-pre-wrap">
@@ -255,7 +255,7 @@ export default function ProcessingView() {
               </div>
             )}
             <div className="max-h-[420px] space-y-2 overflow-y-auto rounded-[18px] border border-white/8 bg-[#12283e] p-4 font-mono text-xs text-text-secondary">
-              {logs.length === 0 && <div className="text-text-muted">暂无日志记录。</div>}
+              {logs.length === 0 && <div className="text-text-muted">No logs yet.</div>}
               {logs.map((log, idx) => {
                 const level = String(log?.level || 'info').toLowerCase();
                 const text = normalizeLogText(log?.text || '');
@@ -277,10 +277,10 @@ export default function ProcessingView() {
             <section className="surface-panel p-5">
               <div className="mb-2 flex items-center gap-2 text-text-primary">
                 <Clock size={15} />
-                <span className="text-sm font-semibold">当前步骤</span>
+                <span className="text-sm font-semibold">Current Step</span>
               </div>
               <div className="text-sm text-text-secondary">
-                {currentStage?.detail || '任务已入队，正在等待可用处理进程。'}
+                {currentStage?.detail || 'Task queued, waiting for worker.'}
               </div>
             </section>
           )}

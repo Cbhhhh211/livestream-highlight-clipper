@@ -121,7 +121,7 @@ export default function HighlightTimeline() {
             clipEnd: payload.originEnd,
           },
         });
-        const message = err?.message || '保存片段调整失败';
+        const message = err?.message || 'Failed to save clip adjustment';
         setSaveError(message);
         dispatch({ type: 'ADD_LOG', payload: { level: 'error', text: message } });
       }
@@ -229,7 +229,7 @@ export default function HighlightTimeline() {
       <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/8 pb-3">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="panel-accent">
-            <span className="text-xs font-semibold tracking-[0.16em] uppercase text-text-primary">时间轴</span>
+            <span className="text-xs font-semibold tracking-[0.16em] uppercase text-text-primary">Timeline</span>
           </div>
           <button
             onClick={handleSplit}
@@ -237,7 +237,7 @@ export default function HighlightTimeline() {
             className="timeline-btn"
           >
             <Scissors size={12} />
-            拆分
+            Split
           </button>
           <button
             onClick={handleMerge}
@@ -245,9 +245,9 @@ export default function HighlightTimeline() {
             className="timeline-btn"
           >
             <GitMerge size={12} />
-            合并
+            Merge
           </button>
-          {savingClipId && <span className="text-xs text-warm animate-pulse">保存中...</span>}
+          {savingClipId && <span className="text-xs text-warm animate-pulse">Saving...</span>}
         </div>
 
         <div className="flex items-center gap-1 rounded-full border border-white/8 bg-[#1a2c41] px-2 py-1">
@@ -321,7 +321,7 @@ export default function HighlightTimeline() {
                   onClick={() => dispatch({ type: 'SELECT_CLIP', payload: clip.id })}
                 >
                   <div className={`absolute inset-x-3 top-1.5 truncate text-[9px] font-mono ${isSelected ? 'text-warm' : 'text-text-muted'}`}>
-                    {Math.round(clip.score * 100)}分
+                    {Math.round(clip.score * 100)}pts
                   </div>
 
                   <div

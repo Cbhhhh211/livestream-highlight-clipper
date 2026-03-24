@@ -115,7 +115,7 @@ def _start_recording(url: str, output_stem: Path) -> tuple[subprocess.Popen, Pat
                 popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
             process = subprocess.Popen(cmd, **popen_kwargs)
         except FileNotFoundError:
-            raise RuntimeError("未找到 yt-dlp，请先安装：pip install yt-dlp") from None
+            raise RuntimeError("yt-dlp not found. Please install it first: pip install yt-dlp") from None
     return process, stdout_log, stderr_log
 
 
@@ -197,14 +197,14 @@ class BiliLiveIngest:
     def run(self) -> IngestResult:
         room_id = _extract_room_id(self.url)
         if not room_id:
-            raise ValueError(f"无法从链接中提取直播间 ID：{self.url}")
+            raise ValueError(f"Cannot extract live room ID from URL: {self.url}")
 
         room_info = _fetch_room_info(room_id)
         title = room_info.get("title", f"live_{room_id}")
         if "live_status" in room_info and int(room_info.get("live_status") or 0) != 1:
             raise RuntimeError(
-                f"直播间 {room_id} 当前未开播（live_status={room_info.get('live_status')}）。"
-                "请在开播状态下开始录制。"
+                f"Live room {room_id} is not currently streaming (live_status={room_info.get('live_status')}). "
+                "Please start recording when the stream is live."
             )
         console.print(f"[cyan]Live room:[/cyan] {title} (ID: {room_id})")
 
@@ -283,11 +283,11 @@ class BiliLiveIngest:
                 stderr_tail = safe_decode(stderr_log.read_bytes())[-1200:].strip()
             found_files = [str(p.name) for p in output_stem.parent.glob(f"{output_stem.name}*")]
             raise RuntimeError(
-                f"录制文件缺失或体积过小：{output_path or '(none)'}\n"
-                f"录制字节数：{recorded_bytes}\n"
-                f"匹配到的文件：{found_files}\n"
-                "请确认直播已开播，且 yt-dlp 支持该链接。\n"
-                f"yt-dlp 错误尾部：\n{stderr_tail or '(empty)'}"
+                f"Recording file missing or too small: {output_path or '(none)'}\n"
+                f"Recorded bytes: {recorded_bytes}\n"
+                f"Matched files: {found_files}\n"
+                "Please verify the stream is live and yt-dlp supports this URL.\n"
+                f"yt-dlp error tail:\n{stderr_tail or '(empty)'}"
             )
 
         duration = _probe_duration(output_path)

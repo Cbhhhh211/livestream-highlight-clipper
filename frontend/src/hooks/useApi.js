@@ -78,7 +78,7 @@ async function request(path, options = {}) {
       // keep plain-text detail
     }
     if (!detail || !String(detail).trim()) {
-      detail = res.statusText || '服务器内部错误';
+      detail = res.statusText || 'Internal server error';
     }
     const err = new Error(`${res.status}: ${detail}`);
     err.status = res.status;
@@ -248,7 +248,7 @@ export const api = {
         try {
           resolve(JSON.parse(xhr.responseText));
         } catch {
-          reject(new Error('响应数据格式无效'));
+          reject(new Error('Invalid response data format'));
         }
       } else {
         let detail = (xhr.responseText || '').trim();
@@ -271,15 +271,15 @@ export const api = {
               });
               resolve(job);
             } catch (err) {
-              reject(err instanceof Error ? err : new Error('本地任务回退创建失败'));
+              reject(err instanceof Error ? err : new Error('Local job fallback creation failed'));
             }
           })();
           return;
         }
-        reject(new Error(`创建本地任务失败: ${xhr.status}${detail ? `: ${detail}` : ''}`));
+        reject(new Error(`Failed to create local job: ${xhr.status}${detail ? `: ${detail}` : ''}`));
       }
     };
-    xhr.onerror = () => reject(new Error('创建本地任务失败'));
+    xhr.onerror = () => reject(new Error('Failed to create local job'));
     xhr.send(formData);
   }),
 
@@ -312,7 +312,7 @@ export const api = {
     eventSource.onerror = () => {
       onMessage({
         type: 'stream_error',
-        text: '进度流已断开，正在回退到轮询模式...',
+        text: 'Progress stream disconnected, falling back to polling...',
       });
       eventSource.close();
     };
@@ -374,10 +374,10 @@ export const api = {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(s3_key);
         } else {
-          reject(new Error(`上传失败: ${xhr.status}`));
+          reject(new Error(`Upload failed: ${xhr.status}`));
         }
       };
-      xhr.onerror = () => reject(new Error('上传失败'));
+      xhr.onerror = () => reject(new Error('Upload failed'));
       xhr.send(formData);
     });
   },

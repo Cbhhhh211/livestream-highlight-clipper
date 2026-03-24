@@ -14,10 +14,10 @@ import { api } from '../hooks/useApi';
 import Toggle from './Toggle';
 
 const PLATFORMS = [
-  { id: 'bilibili', name: '哔哩哔哩', aspect: '16:9', maxDuration: 600, desc: '横屏标准视频' },
-  { id: 'tiktok', name: '抖音', aspect: '9:16', maxDuration: 60, desc: '竖屏短视频' },
-  { id: 'youtube_shorts', name: '油管短视频', aspect: '9:16', maxDuration: 60, desc: '竖屏，最长 60 秒' },
-  { id: 'custom', name: '自定义', aspect: '16:9', maxDuration: null, desc: '保持原始比例' },
+  { id: 'bilibili', name: 'Bilibili', aspect: '16:9', maxDuration: 600, desc: 'Landscape video' },
+  { id: 'tiktok', name: 'Douyin/TikTok', aspect: '9:16', maxDuration: 60, desc: 'Vertical short' },
+  { id: 'youtube_shorts', name: 'YouTube Shorts', aspect: '9:16', maxDuration: 60, desc: 'Vertical, max 60s' },
+  { id: 'custom', name: 'Custom', aspect: '16:9', maxDuration: null, desc: 'Original aspect ratio' },
 ];
 
 const ASPECT_OPTIONS = [
@@ -45,7 +45,7 @@ export default function ExportPanel() {
     if (!clip.downloadUrl) return;
     const resp = await fetch(clip.downloadUrl, { credentials: 'include' });
     if (!resp.ok) {
-      throw new Error(`下载失败（HTTP ${resp.status}）`);
+      throw new Error(`Download failed (HTTP ${resp.status})`);
     }
     const blob = await resp.blob();
     const objectUrl = URL.createObjectURL(blob);
@@ -81,13 +81,13 @@ export default function ExportPanel() {
     setCleanupInfo('');
     const downloadable = selectedClips.filter((c) => !!c.downloadUrl);
     if (downloadable.length === 0) {
-      setExportError('当前任务没有可下载的片段。');
+      setExportError('No downloadable clips for this task.');
       return;
     }
     setExporting(true);
     const failed = await triggerDownloads();
     if (failed.length > 0) {
-      setExportError(`有 ${failed.length} 个片段下载失败，请重试。`);
+      setExportError(`${failed.length} clip(s) failed to download. Please retry.`);
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
     const cleanupMessages = [];
@@ -96,9 +96,9 @@ export default function ExportPanel() {
       try {
         const res = await api.cleanupJobSource(state.jobId);
         const freed = Number.isFinite(res?.freed_mb) ? res.freed_mb : 0;
-        cleanupMessages.push(`源素材已自动清理（释放 ${freed} MB）。`);
+        cleanupMessages.push(`Source files cleaned up (freed ${freed} MB).`);
       } catch (err) {
-        cleanupMessages.push(`源素材清理已跳过：${err?.message || '清理请求失败'}`);
+        cleanupMessages.push(`Source cleanup skipped: ${err?.message || 'Cleanup request failed'}`);
       }
     }
 
@@ -110,10 +110,10 @@ export default function ExportPanel() {
         );
         const removedCount = Number.isFinite(res?.removed_count) ? res.removed_count : 0;
         const freed = Number.isFinite(res?.freed_mb) ? res.freed_mb : 0;
-        cleanupMessages.push(`未选片段已清理（删除 ${removedCount} 个，释放 ${freed} MB）。`);
+        cleanupMessages.push(`Unselected clips removed (${removedCount} deleted, freed ${freed} MB).`);
         dispatch({ type: 'KEEP_ONLY_SELECTED_CLIPS' });
       } catch (err) {
-        cleanupMessages.push(`未选片段清理已跳过：${err?.message || '清理请求失败'}`);
+        cleanupMessages.push(`Unselected clip cleanup skipped: ${err?.message || 'Cleanup request failed'}`);
       }
     }
 
@@ -131,13 +131,13 @@ export default function ExportPanel() {
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_320px] xl:items-center">
             <div>
               <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                导出
+                Export
               </div>
               <h1 className="max-w-2xl text-4xl font-extrabold tracking-[-0.05em] text-text-primary md:text-5xl">
-                打包你保留的片段，并一键导出。
+                Package and export your selected clips.
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-                这里的目标很明确：确认目标格式、下载已选片段，并可在导出后清理源素材。
+                Confirm format, download clips, clean up.
               </p>
             </div>
             <div className="rounded-[26px] border border-white/8 bg-[#12263c] p-5">
@@ -150,23 +150,23 @@ export default function ExportPanel() {
           <section className="surface-panel p-5 md:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
-                <StatChip label="已选片段" value={`${selectedClips.length}`} />
-                <StatChip label="总时长" value={`${totalDuration}秒`} />
-                <StatChip label="格式" value={`${aspect} MP4`} />
+                <StatChip label="Selected Clips" value={`${selectedClips.length}`} />
+                <StatChip label="Total Duration" value={`${totalDuration}sec`} />
+                <StatChip label="Format" value={`${aspect} MP4`} />
               </div>
               <button
                 onClick={() => dispatch({ type: 'SET_PHASE', payload: 'review' })}
                 className="btn-secondary rounded-full px-4 py-2.5 text-xs uppercase tracking-[0.12em]"
               >
                 <ArrowLeft size={14} />
-                返回复核
+                Back to Review
               </button>
             </div>
 
             <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
               <div className="space-y-5">
                 <div className="rounded-[24px] border border-white/8 bg-[#12283e] p-5">
-                  <div className="section-eyebrow mb-5">平台</div>
+                  <div className="section-eyebrow mb-5">Platform</div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {PLATFORMS.map((p) => (
                       <button
@@ -184,7 +184,7 @@ export default function ExportPanel() {
                         <div className="text-sm font-semibold text-text-primary">{p.name}</div>
                         <div className="mt-1 text-sm text-text-secondary">{p.desc}</div>
                         <div className="mt-3 text-xs font-mono text-text-muted">
-                          {p.maxDuration ? `最长 ${p.maxDuration}秒` : '无固定时长限制'}
+                          {p.maxDuration ? `Max ${p.maxDuration}sec` : 'No limit'}
                         </div>
                       </button>
                     ))}
@@ -192,7 +192,7 @@ export default function ExportPanel() {
                 </div>
 
                 <div className="rounded-[24px] border border-white/8 bg-[#12283e] p-5">
-                  <div className="section-eyebrow mb-5">画面比例</div>
+                  <div className="section-eyebrow mb-5">Aspect Ratio</div>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {ASPECT_OPTIONS.map((opt) => (
                       <button
@@ -214,9 +214,9 @@ export default function ExportPanel() {
 
               <aside className="flex flex-col gap-5">
                 <div className="rounded-[24px] border border-white/8 bg-[#12263c] p-5">
-                  <div className="mb-3 text-sm font-semibold text-text-primary">已选片段</div>
+                  <div className="mb-3 text-sm font-semibold text-text-primary">Selected Clips</div>
                   {selectedClips.length === 0 ? (
-                    <div className="text-sm leading-6 text-text-muted">尚未选择片段。请回到复核页保留要导出的内容。</div>
+                    <div className="text-sm leading-6 text-text-muted">No clips selected. Go back to Review to keep clips for export.</div>
                   ) : (
                     <div className="space-y-2">
                       {selectedClips.map((clip, idx) => {
@@ -225,7 +225,7 @@ export default function ExportPanel() {
                           <div key={clip.id} className="rounded-[18px] border border-white/8 bg-[#152b42] px-4 py-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="text-sm font-semibold text-text-primary">
-                                片段 {String(idx + 1).padStart(2, '0')}
+                                Clip {String(idx + 1).padStart(2, '0')}
                               </div>
                               <div className="text-xs font-mono text-text-muted">{scorePercent}</div>
                             </div>
@@ -240,11 +240,11 @@ export default function ExportPanel() {
                 </div>
 
                 <div className="rounded-[24px] border border-white/8 bg-[#152b42] p-5">
-                  <div className="text-sm font-semibold text-text-primary">检查项</div>
+                  <div className="text-sm font-semibold text-text-primary">Checklist</div>
                   <div className="mt-3 space-y-2">
-                    <ChecklistItem done={selectedClips.length > 0} text="至少选择了一个片段" />
-                    <ChecklistItem done={Boolean(platform)} text="已选择平台" />
-                    <ChecklistItem done={Boolean(aspect)} text="已设置画面比例" />
+                    <ChecklistItem done={selectedClips.length > 0} text="At least one clip selected" />
+                    <ChecklistItem done={Boolean(platform)} text="Platform selected" />
+                    <ChecklistItem done={Boolean(aspect)} text="Aspect ratio set" />
                   </div>
                 </div>
 
@@ -256,9 +256,9 @@ export default function ExportPanel() {
                           <Trash2 size={16} />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-text-primary">自动清理源素材</div>
+                          <div className="text-sm font-semibold text-text-primary">Auto-clean source files</div>
                           <div className="mt-1 max-w-xl text-sm leading-6 text-text-secondary">
-                            导出完成后删除缓存的源素材，生成片段会保留。
+                            Delete cached source files after export. Generated clips are kept.
                           </div>
                         </div>
                       </div>
@@ -279,9 +279,9 @@ export default function ExportPanel() {
                           <Trash2 size={16} />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-text-primary">仅保留已导出片段</div>
+                          <div className="text-sm font-semibold text-text-primary">Keep only exported clips</div>
                           <div className="mt-1 max-w-xl text-sm leading-6 text-text-secondary">
-                            导出后自动删除未勾选片段文件，避免目录里保留整批候选。
+                            Automatically remove unselected clip files after export.
                           </div>
                         </div>
                       </div>
@@ -309,8 +309,8 @@ export default function ExportPanel() {
                         <CheckCircle2 size={20} />
                       </div>
                       <div>
-                        <div className="text-base font-semibold text-text-primary">导出完成</div>
-                        <div className="text-sm text-text-secondary">你选择的片段已可下载。</div>
+                        <div className="text-base font-semibold text-text-primary">Export Complete</div>
+                        <div className="text-sm text-text-secondary">Your selected clips are ready for download.</div>
                       </div>
                     </div>
                     {cleanupInfo && <div className="mt-3 text-sm text-text-muted">{cleanupInfo}</div>}
@@ -325,12 +325,12 @@ export default function ExportPanel() {
                   {exporting ? (
                     <>
                       <Loader size={16} className="animate-spin" />
-                      导出中...
+                      Exporting...
                     </>
                   ) : (
                     <>
                       <Download size={16} />
-                      导出 {selectedClips.length} 个片段
+                      Export {selectedClips.length} Clip(s)
                     </>
                   )}
                 </button>
